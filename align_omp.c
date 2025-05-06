@@ -395,16 +395,22 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* 7. Check sums */
+	unsigned long checksum_found_tmp = 0;
+	unsigned long checksum_matches_tmp = 0;
 	unsigned long checksum_matches = 0;
 	unsigned long checksum_found = 0;
+	#pragma omp parallel for reduction(+:checksum_found_tmp)
 	for( ind=0; ind < pat_number; ind++) {
 		if ( pat_found[ind] != (unsigned long)NOT_FOUND )
-			checksum_found = ( checksum_found + pat_found[ind] ) % CHECKSUM_MAX;
+			checksum_found_tmp += pat_found[ind];
 	}
+	checksum_found = checksum_found_tmp % CHECKSUM_MAX;
+	#pragma omp parallel for reduction(+:checksum_matches_tmp)
 	for( lind=0; lind < seq_length; lind++) {
 		if ( seq_matches[lind] != NOT_FOUND )
-			checksum_matches = ( checksum_matches + seq_matches[lind] ) % CHECKSUM_MAX;
+			checksum_matches_tmp += seq_matches[lind];
 	}
+	checksum_matches = checksum_matches_tmp % CHECKSUM_MAX;
 
 #ifdef DEBUG
 	/* DEBUG: Write results */
